@@ -1,0 +1,2 @@
+FROM ubuntu/xenial:latest
+http://idea.qinxi1992.cn
