@@ -47,10 +47,11 @@ RUN /bin/bash -c 'echo ONOS_IP="$(hostname --ip-address)" >> .bashrc ; echo $ONO
 RUN /bin/bash -c 'source $HOME/.bashrc ; tail -1 .bashrc ;'
 
 # Install net-tools as running ONOS locally requires ifconfig
-RUN apt-get install net-tools
+RUN apt-get install net-tools && \
+	apt-get clean && apt-get purge -y && apt-get autoremove -y
 
 # Run ONOS locally on the development container
-#~ RUN /bin/bash -c '/root/onos/tools/dev/bin/onos-karaf clean'
+RUN /bin/bash -c '/root/onos/tools/dev/bin/onos-karaf clean'
 
 #~ # Run ONOS app
 #~ WORKDIR /root
