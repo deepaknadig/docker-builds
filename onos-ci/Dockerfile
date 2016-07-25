@@ -15,7 +15,7 @@ RUN apt-get update && \
 # Set the environment variables 
 ENV HOME /root 
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle 
-ENV ONOS_ROOT /src/onos 
+ENV ONOS_ROOT /root/onos 
 ENV KARAF_VERSION 3.0.5 
 ENV KARAF_ROOT /root/onos/apache-karaf-3.0.5 
 ENV KARAF_LOG /root/onos/apache-karaf-3.0.5/data/log/karaf.log 
@@ -23,22 +23,14 @@ ENV BUILD_NUMBER docker
 ENV PATH $PATH:$KARAF_ROOT/bin
 
 #Download and Build ONOS 
-WORKDIR /src
+WORKDIR /root
 
 RUN git clone https://github.com/opennetworkinglab/onos.git && \ 
 	cd onos && \ 
 	mkdir -p /root/Downloads && \ 
 	mvn clean install && \ 
-	tools/build/onos-package && \
-
-WORKDIR /src/onos
-ENV ONOS_IP 172.17.0.2
-
-RUN source tools/dev/bash_profile && \
-	onos $ONOS_IP
+	tools/build/onos-package
 	
-# Change to /root directory 
-WORKDIR /root 
 
 # Ports 
 # 6653 - OpenFlow 
@@ -48,11 +40,29 @@ WORKDIR /root
 
 EXPOSE 6653 8181 8101 9876 
 
-RUN git clone https://git.deepaknadig.com/deepak/OpenSec.git && \
-	cd OpenSec && \
-	mvn clean install
-	
-WORKDIR /src
-RUN cd onos
-	onos-app $ONOS_IP install! target/OpenSec-1.0-SNAPSHOT.oar
+# Update ONOS ENV variables and bash profile
+WORKDIR /root
+RUN /bin/bash -c 'cat onos/tools/dev/bash_profile >> .bashrc ;'
+RUN /bin/bash -c 'echo ONOS_IP="$(hostname --ip-address)" >> .bashrc ; echo $ONOS_IP ;'
+RUN /bin/bash -c 'source $HOME/.bashrc ; tail -1 .bashrc ;'
+
+# Install net-tools as running ONOS locally requires ifconfig
+RUN apt-get install net-tools
+
+# Run ONOS locally on the development container
+#~ RUN /bin/bash -c '/root/onos/tools/dev/bin/onos-karaf clean'
+
+#~ # Run ONOS app
+#~ WORKDIR /root
+#~ RUN git clone https://git.deepaknadig.com/deepak/OpenSec.git && \
+	#~ cd OpenSec && \
+	#~ mvn clean install
+
+#~ WORKDIR /root/OpenSec
+#~ CMD /bin/bash -c '/root/onos/tools/dev/bin/onos-app 127.0.0.1 install! /root/OpenSec/target/OpenSec-1.0-SNAPSHOT.oar'
+
+#~ WORKDIR /root
+#~ RUN /bin/bash -c '/root/onos/tools/dev/bin/onos-local-log | grep --colour=always -E -e "${1-org.onlab|org.onosproject}" >> logs &'
+
+
 
